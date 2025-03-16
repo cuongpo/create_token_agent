@@ -1,26 +1,30 @@
-# Agent Starter / OpenServ SDK Tutorial
+# ERC20 Token Creation Agent / OpenServ SDK
 
-A starter project to help you get started building AI agents with the [OpenServ SDK](https://github.com/openserv-labs/sdk) - a TypeScript framework that simplifies agent development. Whether you're new to AI development or an experienced developer, this guide will help you get started quickly.
+A specialized agent built with the [OpenServ SDK](https://github.com/openserv-labs/sdk) that creates and deploys ERC20 tokens on the Polygon Amoy testnet. This agent provides a simple interface for token creation without requiring deep blockchain knowledge, making it accessible to both developers and non-technical users.
 
-## What You'll Learn
+## Features
 
-- Setting up your development environment
-- Creating a basic AI agent using the OpenServ SDK
-- Testing your agent locally with `process()` using OpenAI API
-- Deploying your agent to the OpenServ platform
+- **Easy Token Creation**: Create and deploy custom ERC20 tokens on Polygon Amoy testnet with just a few parameters
+- **Flexible Configuration**: Specify token name, symbol, and initial supply through environment variables or direct input
+- **Multiple Deployment Methods**: Deploy tokens through the agent interface or directly via command line
+- **Secure Implementation**: Built with OpenZeppelin's audited and secure token standards
+- **Developer-Friendly**: Simple interface that abstracts away blockchain complexity while providing full control
+- **Detailed Deployment Information**: Get comprehensive information about your deployed token, including contract address and explorer links
 
 ## Prerequisites
 
 - Basic knowledge of JavaScript/TypeScript
 - Node.js installed on your computer
 - An OpenServ account (create one at [platform.openserv.ai](https://platform.openserv.ai))
-- (Optional) An OpenAI API key for local testing
+- An OpenAI API key for local testing
+- A wallet with MATIC tokens on Polygon Amoy testnet (for gas fees)
+- Private key for your Polygon Amoy wallet
 
 ## Getting Started
 
 ### 1. Set Up Your Project
 
-First, clone this agent-starter template repository to get a pre-configured project:
+First, clone this repository to get a pre-configured token creation agent:
 
 ```bash
 git clone https://github.com/openserv-labs/agent-starter.git
@@ -37,57 +41,77 @@ cp .env.example .env
 ```
 
 Edit the `.env` file to add:
+
+**API Keys and Network Configuration:**
 - `OPENSERV_API_KEY`: Your OpenServ API key (required for platform integration)
-- `OPENAI_API_KEY`: Your OpenAI API key (optional, for local testing)
+- `OPENAI_API_KEY`: Your OpenAI API key (for local testing)
 - `PORT`: The port for your agent's server (default: 7378)
+- `POLYGON_AMOY_RPC_URL`: RPC URL for Polygon Amoy (default is provided)
+- `PRIVATE_KEY`: Your wallet's private key (required for deploying tokens) - **KEEP THIS SECURE!**
+
+**Token Configuration:**
+- `TOKEN_NAME`: Default name for your token (e.g., "Openserv test")
+- `TOKEN_SYMBOL`: Default symbol for your token (e.g., "GGG") - typically 3-4 characters
+- `INITIAL_SUPPLY`: Default initial supply (e.g., 1000000000) - this will be multiplied by 10^18 for token decimals
+
+These token parameters can be overridden when creating tokens through the agent or command line.
 
 ### 3. Understand the Project Structure
 
-The agent-starter project has a minimal structure:
+The token creation agent has the following structure:
 
 ```
 agent-starter/
 ├── src/
 │   └── index.ts       # Your agent's core logic and server setup
+├── contracts/
+│   └── MyToken.sol    # ERC20 token contract template
+├── scripts/
+│   └── deploy.js      # Deployment script for the token contract
 ├── .env               # Environment variables
+├── hardhat.config.js  # Hardhat configuration for Polygon Amoy
 ├── package.json       # Project dependencies
 └── tsconfig.json      # TypeScript configuration
 ```
 
-This simple structure keeps everything in one file, making it easy to understand and modify.
+This structure separates the blockchain components (contracts and deployment scripts) from the agent logic, making it easier to understand and modify.
 
-## Understanding the Agent Code
+## Token Creation Agent Capabilities
 
-Let's examine the `src/index.ts` file to understand how an agent is defined with the SDK and how this works:
+The token creation agent is built with the OpenServ SDK and provides a specialized capability for deploying ERC20 tokens on the Polygon Amoy testnet. Let's examine how it works:
 
 ### Key Components of the Agent
 
 1. **Agent Creation**: 
    ```typescript
    const agent = new Agent({
-     systemPrompt: 'You are an agent that sums two numbers'
+     systemPrompt: 'You are an agent that creates and deploys ERC20 tokens on Polygon Amoy testnet'
    })
    ```
-   This creates a new agent with a system prompt that guides its behavior.
+   This creates a new agent with a system prompt that guides its behavior specifically for token creation.
 
-2. **Adding Capabilities**: 
+2. **Token Creation Capability**: 
    ```typescript
    agent.addCapability({
-     name: 'sum',
-     description: 'Sums two numbers',
+     name: 'createToken',
+     description: 'Creates and deploys an ERC20 token on Polygon Amoy testnet',
      schema: z.object({
-       a: z.number(),
-       b: z.number()
+       tokenName: z.string().describe('The name of the token'),
+       tokenSymbol: z.string().describe('The symbol of the token'),
+       initialSupply: z.number().describe('The initial supply of the token (will be multiplied by 10^18)'),
+       ownerAddress: z.string().optional().describe('The address that will own the token (defaults to deployer)')
      }),
      async run({ args }) {
-       return `${args.a} + ${args.b} = ${args.a + args.b}`
+       // Token deployment logic
      }
    })
    ```
-   This defines a capability named `sum` that:
-   - Provides a description for the platform to understand when to use it
-   - Uses Zod schema for type safety and validation
-   - Implements the logic in the `run` function
+   This defines a capability named `createToken` that:
+   - Takes parameters for token name, symbol, and initial supply
+   - Updates the environment variables with these parameters
+   - Compiles the smart contract using Hardhat
+   - Deploys the token to Polygon Amoy testnet
+   - Returns the deployment details including the token address
 
 3. **Starting the Server**:
    ```typescript
@@ -95,61 +119,131 @@ Let's examine the `src/index.ts` file to understand how an agent is defined with
    ```
    This launches an HTTP server that handles requests from the OpenServ platform.
 
-4. **Local Testing with `process()`**:
+4. **Local Testing**:
+   You can test the token creation agent locally by using the `process()` method with a prompt like "create a token called 'MyToken' with symbol 'MTK' and initial supply of 1000000".
+
+## Token Creation Guide
+
+### Setting Up Your Wallet for Polygon Amoy
+
+1. **Get a wallet**: If you don't already have one, create an Ethereum wallet using MetaMask or another provider.
+
+2. **Add Polygon Amoy to your wallet**:
+   - Network Name: Polygon Amoy
+   - RPC URL: https://rpc-amoy.polygon.technology/
+   - Chain ID: 80002
+   - Currency Symbol: MATIC
+   - Block Explorer URL: https://www.oklink.com/amoy/
+
+3. **Get testnet MATIC**:
+   - Visit the Polygon Amoy faucet to get free testnet MATIC tokens
+   - These tokens are needed to pay for gas fees when deploying your token
+
+4. **Export your private key**:
+   - In MetaMask, go to Account Details > Export Private Key
+   - Copy this key to your `.env` file as `PRIVATE_KEY`
+   - **IMPORTANT**: Never share your private key or commit it to version control
+
+### Creating and Deploying Your Token
+
+This agent provides two methods for creating and deploying ERC20 tokens: through the agent interface or directly via command line.
+
+#### Method 1: Using the Agent Interface
+
+1. **Start the agent server**:
+   ```bash
+   npm run dev
+   ```
+
+2. **Test token creation locally**:
    ```typescript
    async function main() {
-     const sum = await agent.process({
+     const tokenCreation = await agent.process({
        messages: [
          {
            role: 'user',
-           content: 'add 13 and 29'
+           content: 'create a token called "Openserv test" with symbol "GGG" and initial supply of 1000000000'
          }
        ]
      })
-   
-     console.log('Sum:', sum.choices[0].message.content)
+     
+     console.log('Token Creation:', tokenCreation.choices[0].message.content)
    }
    ```
-   This demonstrates how to test your agent locally without deploying it to the platform.
 
-## Testing Locally with `process()`
+3. **Deploy through the OpenServ platform**:
+   - After setting up tunneling (see below), you can use the OpenServ platform to interact with your agent
+   - Simply ask it to create a token with your desired parameters, for example:
+     - "Create a token called Openserv test with symbol GGG and initial supply of 1000000000"
+   - The agent will handle the deployment process and return the token address and explorer link
 
-The `process()` method is a SDK feature that allows you to test your agent locally before deploying it to the OpenServ platform. This is especially useful during development to verify your agent works as expected.
+#### Method 2: Using the Command Line (Recommended for Quick Deployments)
 
-### How `process()` Works
+For a simpler approach, you can use the provided npm script to create tokens directly from the command line:
 
-When you call `process()`:
-
-1. The SDK sends the user message to a LLM Large Language Model (using your OpenAI API key)
-2. The AI model determines if your agent's capabilities should be used
-3. If needed, it invokes your capabilities with the appropriate arguments
-4. It returns the response to you for testing
-
-### Testing Complex Inputs and Edge Cases
-
-You can extend the local testing in `main()` to try different inputs:
-
-```typescript
-async function main() {
-  // Test case 1: Simple addition
-  const test1 = await agent.process({
-    messages: [{ role: 'user', content: 'add 13 and 29' }]
-  })
-  console.log('Test 1:', test1.choices[0].message.content)
-  
-  // Test case 2: Different phrasing
-  const test2 = await agent.process({
-    messages: [{ role: 'user', content: 'what is the sum of 42 and 58?' }]
-  })
-  console.log('Test 2:', test2.choices[0].message.content)
-  
-  // Test case 3: Edge case
-  const test3 = await agent.process({
-    messages: [{ role: 'user', content: 'add negative five and seven' }]
-  })
-  console.log('Test 3:', test3.choices[0].message.content)
-}
+```bash
+# Format: npm run create-token "<Token Name>" <Symbol> <Initial Supply>
+npm run create-token "Openserv test" GGG 1000000000
 ```
+
+This command will:
+1. Create a token named "Openserv test" with symbol "GGG" and initial supply of 1,000,000,000 tokens
+2. Deploy it to the Polygon Amoy testnet using your configured wallet
+3. Output the token address and other deployment details
+
+You can also run these commands separately:
+
+```bash
+# Compile the contracts
+npm run compile
+
+# Deploy using environment variables from .env file
+npx hardhat run scripts/deploy.js --network polygonAmoy
+```
+
+#### Verifying Your Token
+
+- Once deployed, you can view your token on the Polygon Amoy Explorer
+- The deployment output will provide a direct link to your token's page (https://www.oklink.com/amoy/address/YOUR_TOKEN_ADDRESS)
+- You can interact with your token using any wallet that supports the Polygon Amoy testnet
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+#### Token Deployment Issues
+
+1. **Environment Variables Not Being Used**
+   - **Problem**: Token deploys with default values instead of values from .env file
+   - **Solution**: Make sure your .env file is properly formatted and that you're running the script with dotenv support. The deployment script now explicitly loads environment variables using `require('dotenv').config()`.
+
+2. **Insufficient Gas Fees**
+   - **Problem**: Deployment fails with "insufficient funds" error
+   - **Solution**: Make sure your wallet has enough MATIC tokens on Polygon Amoy testnet. You can get free testnet MATIC from the [Polygon Amoy Faucet](https://amoy.polygon.technology/).
+
+3. **Incorrect Network Configuration**
+   - **Problem**: Cannot connect to Polygon Amoy
+   - **Solution**: Verify your `POLYGON_AMOY_RPC_URL` in the .env file. The default URL should work, but if you're experiencing issues, try using an alternative RPC provider.
+
+4. **Token Parameters Parsing**
+   - **Problem**: Initial supply not being correctly applied
+   - **Solution**: Make sure the initial supply is parsed as an integer. The scripts now use `parseInt()` to ensure proper handling of numeric values.
+
+#### Agent Interface Issues
+
+1. **Agent Not Responding**
+   - **Problem**: Agent doesn't respond to token creation requests
+   - **Solution**: Check that your OpenAI API key is valid and that you've started the agent server with `npm run dev`.
+
+2. **OpenServ Platform Connection**
+   - **Problem**: Cannot connect to OpenServ platform
+   - **Solution**: Verify your tunneling setup and make sure your agent is registered correctly on the platform.
+
+### Debugging Tips
+
+1. **Check Logs**: The deployment scripts now include detailed logging of environment variables and deployment parameters.
+2. **Test Locally**: Before deploying to Polygon Amoy, test your token creation locally using Hardhat's local network.
+3. **Verify Contract**: After deployment, verify your contract on the Polygon Amoy Explorer to ensure it was deployed correctly.
 
 ## Exposing Your Local Server with Tunneling
 
