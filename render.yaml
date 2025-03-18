@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: agent-starter
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: OPENSERV_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: POLYGON_AMOY_RPC_URL
+        value: https://rpc-amoy.polygon.technology/
+      - key: PRIVATE_KEY
+        sync: false
+      - key: TOKEN_NAME
+        value: MyToken
+      - key: TOKEN_SYMBOL
+        value: MTK
+      - key: INITIAL_SUPPLY
+        value: 1000000
+    autoDeploy: true
