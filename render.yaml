@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: token-creator-agent
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: PRIVATE_KEY
+        sync: false
+      - key: POLYGON_AMOY_RPC_URL
+        sync: false
