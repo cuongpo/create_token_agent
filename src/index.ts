@@ -15,44 +15,6 @@ async function createTokenImpl(args: {
   ownerAddress?: string;
 }) {
   try {
-    // Update .env file with token parameters
-    const envPath = './.env'
-    let envContent = ''
-    
-    try {
-      envContent = fs.readFileSync(envPath, 'utf8')
-    } catch (error) {
-      console.error('Error reading .env file:', error)
-      return 'Error: Could not read .env file. Please make sure it exists.'
-    }
-
-    // Update or add token configuration
-    const envLines = envContent.split('\n')
-    const tokenNameLine = envLines.findIndex(line => line.startsWith('TOKEN_NAME='))
-    const tokenSymbolLine = envLines.findIndex(line => line.startsWith('TOKEN_SYMBOL='))
-    const initialSupplyLine = envLines.findIndex(line => line.startsWith('INITIAL_SUPPLY='))
-    
-    if (tokenNameLine >= 0) {
-      envLines[tokenNameLine] = `TOKEN_NAME=${args.tokenName}`
-    } else {
-      envLines.push(`TOKEN_NAME=${args.tokenName}`)
-    }
-    
-    if (tokenSymbolLine >= 0) {
-      envLines[tokenSymbolLine] = `TOKEN_SYMBOL=${args.tokenSymbol}`
-    } else {
-      envLines.push(`TOKEN_SYMBOL=${args.tokenSymbol}`)
-    }
-    
-    if (initialSupplyLine >= 0) {
-      envLines[initialSupplyLine] = `INITIAL_SUPPLY=${args.initialSupply}`
-    } else {
-      envLines.push(`INITIAL_SUPPLY=${args.initialSupply}`)
-    }
-    
-    // Write updated .env file
-    fs.writeFileSync(envPath, envLines.join('\n'))
-    
     // Check if private key is set
     if (!process.env.PRIVATE_KEY || process.env.PRIVATE_KEY === 'your_wallet_private_key_here') {
       return 'Error: Please set your PRIVATE_KEY in the .env file before deploying a token.'
@@ -74,9 +36,32 @@ async function createTokenImpl(args: {
     
     console.log('Compilation output:', compileOutput)
     
-    // Deploy token to Polygon Amoy
+    // Deploy token to Polygon Amoy with parameters directly passed to the script
     console.log('Deploying token to Polygon Amoy...')
-    const { stdout: deployOutput, stderr: deployError } = await execPromise('npx hardhat run scripts/deploy.js --network polygonAmoy')
+    
+    // Create a temporary token config file
+    const tokenConfigPath = './token-config.json'
+    const tokenConfig = {
+      tokenName: args.tokenName,
+      tokenSymbol: args.tokenSymbol,
+      initialSupply: args.initialSupply,
+      ownerAddress: args.ownerAddress || ''
+    }
+    
+    // Write token config to file
+    fs.writeFileSync(tokenConfigPath, JSON.stringify(tokenConfig, null, 2))
+    
+    // Deploy using the config file
+    const deployCommand = `npx hardhat run scripts/deploy.js --network polygonAmoy`
+    
+    const { stdout: deployOutput, stderr: deployError } = await execPromise(deployCommand)
+    
+    // Clean up the temporary file
+    try {
+      fs.unlinkSync(tokenConfigPath)
+    } catch (error) {
+      console.error('Error removing temporary token config file:', error)
+    }
     
     if (deployError) {
       console.error('Deployment error:', deployError)
